@@ -31,7 +31,7 @@ Read algorithm:
 
 1. User enter pin-code and send it to the Keystore.
 2. KeyStore returns temporary key.
-3. User gen encrypted key from locaStorage and decrypt it.
+3. User get encrypted key from locaStorage and decrypt it.
 4. User can use secret key.
 
 ### License
