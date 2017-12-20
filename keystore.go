@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"sync"
@@ -42,7 +43,7 @@ var mux = sync.Mutex{}
 var lifetime int64 = 15 * 60
 var maxAttempts = 15
 var timeout = time.Second
-var keys = make(map[string]Key)
+var keys = make(map[string]*Key)
 
 type App struct{}
 
@@ -104,7 +105,7 @@ func AddKey(w http.ResponseWriter, r *http.Request) {
 	}
 
 	mux.Lock()
-	keys[key.ID] = key
+	keys[key.ID] = &key
 	mux.Unlock()
 
 	buf, err := json.Marshal(key)
@@ -145,11 +146,7 @@ func GetKey(w http.ResponseWriter, r *http.Request) {
 				mux.Lock()
 				delete(keys, key.ID)
 				mux.Unlock()
-				http.NotFound(w, r)
-				return
 			}
-
-			keys[id] = key
 
 			http.Error(w, "Wrong code", 403)
 			return
@@ -157,9 +154,6 @@ func GetKey(w http.ResponseWriter, r *http.Request) {
 
 		// Update expiration
 		key.Expire = now + lifetime
-		mux.Lock()
-		keys[id] = key
-		mux.Unlock()
 
 		keyRes := KeyResponse{
 			ID:       key.ID,
@@ -251,7 +245,16 @@ func main() {
 		}
 	})()
 
-	err := http.ListenAndServe("localhost:8080", app)
+	var addr string
+	if len(os.Args) < 2 {
+		addr = "localhost:8080"
+	} else {
+		addr = os.Args[1]
+	}
+
+	log.Println("Start server at", addr)
+
+	err := http.ListenAndServe(addr, app)
 	if err != nil {
 		log.Fatal(err)
 	}
