@@ -19,6 +19,12 @@
 #  name = "github.com/x/y"
 #  version = "2.4.0"
 
+[metadata.heroku]
+  root-package = "github.com/cryptodoc/keystore"
+  go-version = "go1.8.3"
+  install = [ ". ]
+  ensure = "false"
+  additional-tools = []
 
 [[constraint]]
   name = "github.com/google/uuid"
