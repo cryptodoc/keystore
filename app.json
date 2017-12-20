@@ -1,0 +1,11 @@
+{
+  "name": "CryptoDoc: Keystore",
+  "description": "Keystore web service",
+  "keywords": [
+    "go",
+    "keys",
+    "secrets"
+  ],
+  "website": "http://github.com/cryptodoc/keystore",
+  "repository": "http://github.com/cryptodoc/keystore"
+}
