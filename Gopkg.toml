@@ -21,7 +21,7 @@
 
 [metadata.heroku]
   root-package = "github.com/cryptodoc/keystore"
-  go-version = "go1.9.0"
+  go-version = "go1.9.2"
   install = [ "./..." ]
   ensure = "false"
   additional-tools = []
