@@ -1,1 +1,1 @@
-web: keystore 127.0.0.1:$PORT
+web: keystore 0.0.0.0:$PORT
