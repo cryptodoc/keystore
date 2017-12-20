@@ -2,7 +2,7 @@
 
 ---
 
-> **Attention**. Work in progress.
+> **Warning**. Work in progress.
 
 ---
 
