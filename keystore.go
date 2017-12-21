@@ -1,12 +1,12 @@
 package main
 
 import (
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
 	"strconv"
@@ -85,11 +85,21 @@ func AddKey(w http.ResponseWriter, r *http.Request) {
 
 	err := decoder.Decode(&keyReq)
 	if err != nil {
-		fmt.Fprint(w, err)
+		http.Error(w, "Internal error", 500)
+		log.Println("Error:", err)
 		return
 	}
 
 	defer r.Body.Close()
+
+	secret, err := randBytes(32)
+
+	if err != nil {
+		http.Error(w, "Internal error", 500)
+		log.Println("Error:", err)
+		return
+	}
+
 	now := time.Now().Unix()
 
 	key := Key{}
@@ -97,7 +107,7 @@ func AddKey(w http.ResponseWriter, r *http.Request) {
 	key.Created = now
 	key.Expire = now + lifetime
 	key.Code = keyReq.Code
-	key.Secret = RandStringBytesMask(32)
+	key.Secret = string(HexHash(secret))
 	key.Password = keyReq.Password
 	key.Origin = r.Header.Get("Origin")
 
@@ -113,7 +123,8 @@ func AddKey(w http.ResponseWriter, r *http.Request) {
 	buf, err := json.Marshal(key)
 
 	if err != nil {
-		fmt.Fprint(w, err)
+		http.Error(w, "Internal error", 500)
+		log.Println("Error:", err)
 		return
 	}
 
@@ -167,7 +178,7 @@ func GetKey(w http.ResponseWriter, r *http.Request) {
 		buf, err := json.Marshal(keyRes)
 
 		if err != nil {
-			log.Print("err:", err)
+			log.Print("error:", err)
 			http.Error(w, "Internal error", 500)
 			return
 		}
@@ -211,22 +222,15 @@ func SplitAuthHeader(header string) (string, string) {
 	return tail[:i], tail[i+1:]
 }
 
-// TODO Get strong random func
-const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-const (
-	letterIdxBits = 6                    // 6 bits to represent a letter index
-	letterIdxMask = 1<<letterIdxBits - 1 // All 1-bits, as many as letterIdxBits
-)
+func randBytes(n int) ([]byte, error) {
+	buf := make([]byte, n)
+	_, err := rand.Read(buf)
 
-func RandStringBytesMask(n int) string {
-	b := make([]byte, n)
-	for i := 0; i < n; {
-		if idx := int(rand.Int63() & letterIdxMask); idx < len(letterBytes) {
-			b[i] = letterBytes[idx]
-			i++
-		}
+	if err != nil {
+		return nil, err
 	}
-	return string(b)
+
+	return buf, nil
 }
 
 func main() {
