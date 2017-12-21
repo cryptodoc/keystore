@@ -25,6 +25,7 @@ type Key struct {
 	Secret   string `json:"secret"`
 	Code     string `json:"-"`
 	Attempts int    `json:"-"`
+	Origin   string `json:"-"`
 }
 
 type KeyRequest struct {
@@ -98,6 +99,7 @@ func AddKey(w http.ResponseWriter, r *http.Request) {
 	key.Code = keyReq.Code
 	key.Secret = RandStringBytesMask(32)
 	key.Password = keyReq.Password
+	key.Origin = r.Header.Get("Origin")
 
 	if _, ok := keys[key.ID]; ok {
 		http.Error(w, "Conflict", 410)
@@ -135,7 +137,7 @@ func GetKey(w http.ResponseWriter, r *http.Request) {
 		tokenHash := HexHash([]byte(key.Code), []byte(nowStr))
 		signHash := HexHash(tokenHash, []byte(key.Secret))
 
-		if string(tokenHash) != token || string(signHash) != sign {
+		if key.Origin != r.Header.Get("Origin") || string(tokenHash) != token || string(signHash) != sign {
 			key.Attempts++
 
 			if key.Attempts >= maxAttempts {
