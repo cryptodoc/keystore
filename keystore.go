@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"net/http"
@@ -41,7 +42,7 @@ type KeyResponse struct {
 }
 
 var mux = sync.Mutex{}
-var lifetime int64 = 15 * 60
+var lifetime time.Duration = 15 * time.Second
 var maxAttempts = 15
 var timeout = time.Second
 var keys = make(map[string]*Key)
@@ -105,7 +106,7 @@ func AddKey(w http.ResponseWriter, r *http.Request) {
 	key := Key{}
 	key.ID = uuid.New().String()
 	key.Created = now
-	key.Expire = now + lifetime
+	key.Expire = now + int64(lifetime)
 	key.Code = keyReq.Code
 	key.Secret = string(HexHash(secret))
 	key.Password = keyReq.Password
@@ -166,7 +167,7 @@ func GetKey(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Update expiration
-		key.Expire = now + lifetime
+		key.Expire = now + int64(lifetime)
 
 		keyRes := KeyResponse{
 			ID:       key.ID,
@@ -236,6 +237,11 @@ func randBytes(n int) ([]byte, error) {
 func main() {
 	app := &App{}
 
+	flag.DurationVar(&timeout, "timeout", timeout, "Clean up timeout")
+	flag.DurationVar(&lifetime, "lifetime", lifetime, "Key lifetime duration")
+
+	flag.Parse()
+
 	go (func() {
 		for {
 			now := time.Now().Unix()
@@ -252,10 +258,13 @@ func main() {
 	})()
 
 	var addr string
-	if len(os.Args) < 2 {
+	length := len(os.Args)
+
+	left := flag.NArg()
+	if left < 1 {
 		addr = "localhost:8080"
 	} else {
-		addr = os.Args[1]
+		addr = os.Args[length-left]
 	}
 
 	log.Println("Start server at", addr)
